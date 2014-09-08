@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <title>Chat</title>
+  <link rel="stylesheet" href="/stylesheets/style.css"></link>
+</head>
+
+<body ng-app="myApp">
+
+<div ng-controller="SyncController">
+  <input type="text" name="data.field" ng-model="data.field" ng-change="change()" />
+  {{ data.field }}
+  <br/>
+  Client ID: {{ clientId }}
+</div>
+
+<script src="/socket.io/socket.io.js" type="text/javascript"></script>
+<script src="http://code.jquery.com/jquery-1.8.0.min.js" type="text/javascript"></script>
+<script src="/bower_components/angular/angular.js"></script>
+<script src="/bower_components/angular-socket-io/socket.js"></script>
+
+<script>
+
+var $ = jQuery.noConflict();
+
+var myApp = angular.module('myApp', ['btford.socket-io']);
+
+myApp.factory('syncSocket', function(socketFactory) {
+  return socketFactory();
+});
+
+myApp.controller('SyncController', function($scope, syncSocket) {
+  $scope.data = { field: 'test' };
+
+  syncSocket.on('clientIdChange', function(payload) {
+    $scope.clientId = payload.clientId;
+  });
+
+  syncSocket.on('update', function(payload) {
+    if (payload.whoDunnit == $scope.clientId)
+      return;
+    $scope.data = { field: payload.newData };
+  });
+
+  $scope.change = function(newValue) {
+    syncSocket.emit('update', { newData: $scope.data.field });
+  }
+});
+
+</script>
+</body>
+</html>
